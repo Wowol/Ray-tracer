@@ -1,11 +1,10 @@
 #include "color.h"
+#include "drawable.h"
 #include "image.h"
-#include "convolve.h"
+#include "render.h"
+#include <vector>
 
 int main() {
-    Image img;
-    img.readPNG("tcs1.png");
-    convolve(img, 3, {1.0f, 0.0f, -1.0f, 1.0f, 0.3f, -1.0f, 1.0f, 0.0f, -1.0f});
-    img.writePNG("tcs2.png");
+    render(std::vector<Drawable *>()).writePNG("out.png");
     return 0;
 }
