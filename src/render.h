@@ -1,5 +1,5 @@
-#include <vector>
-#include "drawable.h"
 #include "image.h"
+#include "sphere.h"
+#include <vector>
 
-Image render(std::vector<Drawable *> drawables);
+Image render(std::vector<Sphere> const &spheres);

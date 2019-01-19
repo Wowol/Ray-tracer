@@ -1,11 +1,10 @@
-#include <vector>
 #include "color.h"
-#include "drawable.h"
 #include "image.h"
 #include "ray.h"
 #include "render.h"
 #include "sphere.h"
 #include "vector3.h"
+#include <vector>
 
 #include <iostream>
 
@@ -19,6 +18,7 @@ int main() {
 
     std::cout << ray.distance_to_point(point) << std::endl;
     std::cout << sphere.hits_ray(ray) << std::endl;
-    // render(std::vector<Drawable *>()).writePNG("out.png");
+
+    render(std::vector<Sphere>()).writePNG("out.png");
     return 0;
 }

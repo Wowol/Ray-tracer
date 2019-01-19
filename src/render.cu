@@ -2,7 +2,7 @@
 #include "render.h"
 #include <vector>
 
-Image render(std::vector<Drawable *> const &drawables) {
+Image render(std::vector<Sphere> const &spheres) {
     Image img(1024, 768);
     for (int i = 0; i < img.width(); i++) {
         for (int j = 0; j < img.height(); j++) {
