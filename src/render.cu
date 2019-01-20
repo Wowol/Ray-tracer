@@ -21,31 +21,28 @@ static __global__ void kernel(int width, int height, RGBColor *img, Sphere *sphe
                               int spheres_count) {
     int tidX = blockIdx.x * blockDim.x + threadIdx.x;
     int tidY = blockIdx.y * blockDim.y + threadIdx.y;
-    if (tidX > width || tidY < height) {
+    if (tidX > width || tidY > height) {
         return;
     }
-
+    
     Rectangle screen = camera.get_screen();
 
-    Vector3 point_on_screen =
-        Vector3(screen.left_top_point.x + tidX * screen.width() / width,
-                screen.left_top_point.y - tidY * screen.height() / height, screen.left_top_point.z);
+    
+    Vector3 point_on_screen = Vector3(screen.left_top_point.x + tidX * screen.width() / width,
+    screen.left_top_point.y - tidY * screen.height() / height, screen.left_top_point.z);
     Vector3 direction(camera.position, point_on_screen);
     Ray ray(camera.position, direction);
-
-
+    
     for (int sphere_index = 0; sphere_index < spheres_count; sphere_index++) {
         if (spheres[sphere_index].hits_ray(ray)) {
             img[tidY*width + tidX] = RGBColor(1, 0.5f, 1);
-        } else {
-            img[tidY*width + tidX] = RGBColor(0, 0, 0);
-        }
+        } 
     }
 }
 
 Image render(std::vector<Sphere> const &spheres, Camera &camera) {
     cudaSetDevice(2);
-    Image img(50, 40);
+    Image img(1920, 1080);
 
     RGBColor *cudaPixels;
     gpuErrchk(cudaMalloc(&cudaPixels, sizeof(RGBColor) * img.width() * img.height()));
@@ -66,6 +63,5 @@ Image render(std::vector<Sphere> const &spheres, Camera &camera) {
     cudaFree(cudaPixels);
     cudaFree(cudaSpheres);
 
-    printf("kek\n");
     return img;
 }

@@ -10,12 +10,14 @@
 #define HD
 #endif
 
-
 class Sphere {
    public:
-    HD Sphere(Vector3 p, float r);
-    HD float get_radius();
-    HD bool hits_ray(const Ray &r);
+    HD Sphere(Vector3 pos, float r) : position(pos), radius(r) {}
+    HD float get_radius() { return radius; }
+
+    HD bool hits_ray(const Ray &ray) {
+        return ray.distance_to_point(position) <= radius;
+    }
 
    private:
     Vector3 position;

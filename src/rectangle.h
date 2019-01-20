@@ -12,14 +12,16 @@
 
 class Rectangle {
    public:
-    HD Rectangle(Vector3 left_top, Vector3 right_bottom);
-    HD Rectangle(Vector3 center, float width, float height);
+    HD Rectangle(Vector3 left_top, Vector3 right_bottom) : left_top_point(left_top), right_bottom_point(right_bottom) {}
+    HD Rectangle(Vector3 center, float width, float height) {
+        left_top_point = Vector3(center.x - width / 2, center.y + height / 2, center.z);
+        right_bottom_point = Vector3(center.x + width / 2, center.y - height / 2, center.z);
+    }
     Vector3 left_top_point;
     Vector3 right_bottom_point;
-    HD float width() const;
-    HD float height() const;
+    HD float width() const { return right_bottom_point.x - left_top_point.x; }
+    HD float height() const { return left_top_point.y - right_bottom_point.y; }
 
-    friend std::ostream& operator<<(std::ostream& stream, const Rectangle& r);
 };
 
 #endif  // RECTANGLE_HEADER
