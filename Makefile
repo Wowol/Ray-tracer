@@ -3,7 +3,7 @@ CC=g++
 NV=$(CUDA_INSTALL_PATH)/bin/nvcc
 LD=$(CUDA_INSTALL_PATH)/bin/nvcc
 CCFLAGS=-Isrc -I$(CUDA_INSTALL_PATH)/include -std=c++11 -Wall
-NVARCH=--gpu-architecture=compute_61 --gpu-code=sm_61
+NVARCH= #--gpu-architecture=compute_61 --gpu-code=sm_61
 NVFLAGS=-Isrc -std=c++11 $(NVARCH) --compiler-options -Wall --resource-usage
 NVFLAGSDEP=-Isrc -std=c++11 $(NVARCH)
 LDFLAGS=$(NVARCH) -lcuda -lpng

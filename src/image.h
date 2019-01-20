@@ -3,6 +3,13 @@
 
 #include "color.h"
 
+#ifdef __CUDACC__
+#define HD __host__ __device__
+#else
+#define HD
+#endif
+
+
 class Image {
 public:
     Image();

@@ -3,6 +3,12 @@
 
 #include <cmath>
 
+#ifdef __CUDACC__
+#define HD __host__ __device__
+#else
+#define HD
+#endif
+
 class RGBColor {
 public:
     float data[4];
@@ -15,8 +21,8 @@ public:
     inline float g() const { return data[1]; }
     inline float b() const { return data[2]; }
 
-    RGBColor() {}
-    RGBColor(float r, float g, float b) : data{r,g,b,0.0f} {}
+    HD RGBColor() {}
+    HD RGBColor(float r, float g, float b) : data{r,g,b,0.0f} {}
 
     static RGBColor rep(float v) { return RGBColor(v,v,v); }
 
