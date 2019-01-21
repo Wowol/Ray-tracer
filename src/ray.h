@@ -19,6 +19,14 @@ class Ray {
         return (point - puv).length();
     }
 
+    HD Vector3 get_position() const {
+        return position;
+    }
+
+    HD Vector3 get_direction() const {
+        return direction;
+    }
+
    private:
     Vector3 position;
     Vector3 direction;

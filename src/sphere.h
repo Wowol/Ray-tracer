@@ -16,7 +16,14 @@ class Sphere {
     HD float get_radius() { return radius; }
 
     HD bool hits_ray(const Ray &ray) {
-        return ray.distance_to_point(position) <= radius;
+        Vector3 oc = ray.get_position() - position;
+        float a = ray.get_direction().scalar_product(ray.get_direction());
+        float b = 2.0f * oc.scalar_product(ray.get_direction());
+        float c = oc.scalar_product(oc) - radius * radius;
+
+        float delta = b*b - 4*a*c;
+
+        return delta > 0; 
     }
 
    private:
