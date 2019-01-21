@@ -1,4 +1,3 @@
-#include <vector>
 #include "camera.h"
 #include "color.h"
 #include "image.h"
@@ -7,6 +6,7 @@
 #include "render.h"
 #include "sphere.h"
 #include "vector3.h"
+#include <vector>
 
 #include <iostream>
 
@@ -29,8 +29,10 @@ void camera_test() {
     // for (int x = 0; x < resolution_width; x++) {
     //     for (int y = 0; y < resolution_height; y++) {
     //         Vector3 point_on_screen =
-    //             Vector3(screen.left_top_point.x + x * screen.width() / resolution_width,
-    //                     screen.left_top_point.y - y * screen.height() / resolution_height, screen.left_top_point.z);
+    //             Vector3(screen.left_top_point.x + x * screen.width() /
+    //             resolution_width,
+    //                     screen.left_top_point.y - y * screen.height() /
+    //                     resolution_height, screen.left_top_point.z);
     //         Vector3 direction(position, point_on_screen);
 
     //         Ray r(position, direction);
@@ -63,7 +65,11 @@ void render_test() {
     float width = 12.0f;
     float height = 9.0f;
 
-    std::vector<Sphere> spheres = {Sphere(Vector3(4.0f, 5.0f, 14.0f), 4.0f), Sphere(Vector3(-8.0f, 4.0f, 12.0f), 4.0f)};
+    std::vector<Sphere> spheres = {
+        Sphere(Vector3(4.0f, 5.0f, 14.0f), 4.0f,
+               Material(RGBColor(1, 0.5f, 0.5f), 0, 0)),
+        Sphere(Vector3(-8.0f, 4.0f, 12.0f), 4.0f,
+               Material(RGBColor(1, 0, 1), 0, 0))};
 
     Camera camera(position, vector_to_screen, width, height);
 
