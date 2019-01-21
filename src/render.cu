@@ -20,8 +20,8 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 }
 
 static __device__ RGBColor cast_ray(Vector3 ray_source, Ray const &ray, Sphere *spheres, int const & spheres_count) {
-    float current_distance = INFINITY;
-    float hit_sphere = -1;
+    float current_distance = FLOAT_INFINITY;
+    int hit_sphere = -1;
 
     for (int sphere_index = 0; sphere_index < spheres_count; sphere_index++) {
 
@@ -35,7 +35,7 @@ static __device__ RGBColor cast_ray(Vector3 ray_source, Ray const &ray, Sphere *
     }
 
     if (hit_sphere != -1) {
-        return RGBColor(1, 0.5f, 1);
+        return spheres[hit_sphere].get_material().get_color();
     }
     
     return RGBColor(0, 0, 0); // background
