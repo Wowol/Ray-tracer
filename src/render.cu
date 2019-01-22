@@ -24,9 +24,10 @@ static __global__ void kernel(int width, int height, RGBColor *img, Sphere *sphe
     if (tidX > width || tidY > height) {
         return;
     }
+
+    img[tidY*width + tidX] = RGBColor(0.0f, 0.0f, 0.0f);
     
     Rectangle screen = camera.get_screen();
-
     
     Vector3 point_on_screen = Vector3(screen.left_top_point.x + tidX * screen.width() / width,
     screen.left_top_point.y - tidY * screen.height() / height, screen.left_top_point.z);
@@ -41,7 +42,7 @@ static __global__ void kernel(int width, int height, RGBColor *img, Sphere *sphe
 }
 
 Image render(std::vector<Sphere> const &spheres, Camera &camera) {
-    cudaSetDevice(2);
+    cudaSetDevice(0);
     Image img(1920, 1080);
 
     RGBColor *cudaPixels;

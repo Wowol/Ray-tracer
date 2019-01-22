@@ -13,18 +13,20 @@
 void camera_test()
 {
     std::vector<Sphere> spheres;
-    Vector3 position(4.0f, 5.0f, 0.0f);
-    Vector3 vector_to_screen(0.0f, 0.0f, 2.0f);
-    float width = 8.0f;
-    float height = 6.0f;
+    Vector3 position(0.0f, 0.0f, 0.0f);
+    Vector3 vector_to_screen(0.0f, 0.0f, 1.0f);
+    float width = 1.6f;
+    float height = 0.9f;
 
-    Sphere s(Vector3(4.0f, 15.0f, 10.0f), 4.0f);
+    Sphere s(Vector3(1.2f, 1.2f, 5.0f), 0.5f);
 
     Camera camera(position, vector_to_screen, width, height);
 
     Rectangle screen = camera.get_screen();
 
-    Image img(800, 600);
+    printf("%f %f %f %f\n", screen.left_top_point.x, screen.left_top_point.y, screen.right_bottom_point.x, screen.right_bottom_point.y);
+
+    Image img(1920, 1080);
     for (int x = 0; x < img.width(); x++)
     {
         for (int y = 0; y < img.height(); y++)
@@ -33,7 +35,6 @@ void camera_test()
                 Vector3(screen.left_top_point.x + x * screen.width() / img.width(),
                         screen.left_top_point.y - y * screen.height() / img.height(), screen.left_top_point.z);
 
-          //  printf("%f %f %f\n", point_on_screen.x, point_on_screen.y, point_on_screen.z);
             Vector3 direction(position, point_on_screen);
 
             Ray r(position, direction);
@@ -44,12 +45,12 @@ void camera_test()
             }
             else
             {
-                img(x, y) = RGBColor(0, 0, 0);
+                img(x, y) = RGBColor(1.0f / x,1.0f / y, 0);
             }
         }
     }
 
-    img(400, 300) = RGBColor(5.0f, 5.0f, 5.0f);
+    img(img.width()/2, img.height()/2) = RGBColor(5.0f, 5.0f, 5.0f);
     img.writePNG("out.png");
 }
 
@@ -68,12 +69,14 @@ void vector_test()
 
 void render_test()
 {
-    Vector3 position(4.0f, 5.0f, 0.0f);
-    Vector3 vector_to_screen(0.0f, 0.0f, 3.0f);
-    float width = 16.0f;
-    float height = 9.0f;
+    Vector3 position(0.0f, 0.0f, 0.0f);
+    Vector3 vector_to_screen(0.0f, 0.0f, 1.0f);
+    float width = 1.6f;
+    float height = 0.9f;
 
-    std::vector<Sphere> spheres = {Sphere(Vector3(20.0f, 5.0f, 14.0f), 4.0f), Sphere(Vector3(-8.0f, 4.0f, 12.0f), 4.0f)};
+    Sphere s(Vector3(1.2f, 1.2f, 5.0f), 0.5f);
+
+    std::vector<Sphere> spheres = {Sphere(Vector3(1.2f, 1.2f, 5.0f), 0.5f), Sphere(Vector3(-1.0f, 1.2f, 5.0f), 0.5f)};
 
     Camera camera(position, vector_to_screen, width, height);
 
