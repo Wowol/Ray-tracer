@@ -8,6 +8,7 @@
 #include <vector>
 
 static constexpr int CHUNK_SIZE = 32;
+static constexpr int MAX_NUMBER_OF_REFLECTIONS = 2;
 static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::max();
 
 #define gpuErrchk(ans)                                                         \
@@ -22,20 +23,45 @@ inline void gpuAssert(cudaError_t code, const char *file, int line,
     }
 }
 
-static __device__ RGBColor cast_ray(Ray const &ray, Sphere *spheres,
-                                    int const &spheres_count) {
-    float current_distance = FLOAT_INFINITY;
-    int hit_sphere = -1;
+static __device__ Ray reflect(Ray const &ray, Sphere const &sphere) {
+    Vector3 intersection_point = sphere.get_intersection_point(ray);
+    Vector3 perpendicular(sphere.get_position(), intersection_point);
+    perpendicular.normalize();
 
-    for (int sphere_index = 0; sphere_index < spheres_count; sphere_index++) {
-        if (spheres[sphere_index].hits_ray(ray)) {
-            float distance = Vector3(ray.get_position(),
-                                     spheres[sphere_index].get_position())
-                                 .length();
-            if (distance < current_distance) {
-                current_distance = distance;
-                hit_sphere = sphere_index;
+    Vector3 oc(ray.get_position(), sphere.get_position());
+
+    Vector3 offset(ray.get_position(),
+                   perpendicular * (perpendicular.scalar_product(oc)));
+
+    return Ray(intersection_point, ray.get_position() + offset * 2);
+}
+
+static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
+                                    int const &spheres_count) {
+
+    int hit_sphere = -1;
+    for (int i = 0; i < MAX_NUMBER_OF_REFLECTIONS; i++) {
+        float current_distance = FLOAT_INFINITY;
+
+        for (int sphere_index = 0; sphere_index < spheres_count;
+             sphere_index++) {
+            if (sphere_index != hit_sphere &&
+                spheres[sphere_index].hits_ray(ray)) {
+                float distance =
+                    Vector3(ray.get_position(),
+                            spheres[sphere_index].get_intersection_point(ray))
+                        .length();
+                if (distance < current_distance) {
+                    current_distance = distance;
+                    hit_sphere = sphere_index;
+                }
             }
+        }
+
+        if (hit_sphere != -1) {
+            ray = reflect(ray, spheres[hit_sphere]);
+        } else {
+            break;
         }
     }
 
@@ -66,8 +92,7 @@ static __global__ void kernel(int width, int height, RGBColor *img,
     Vector3 direction(camera.position, point_on_screen);
     Ray ray(camera.position, direction);
 
-    img[tidY * width + tidX] =
-        cast_ray(ray, spheres, spheres_count);
+    img[tidY * width + tidX] = cast_ray(ray, spheres, spheres_count);
 }
 
 Image render(std::vector<Sphere> const &spheres, Camera &camera) {
