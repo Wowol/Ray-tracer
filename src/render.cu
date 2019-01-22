@@ -1,4 +1,5 @@
 #include <vector>
+#include <limits>
 #include "color.h"
 #include "camera.h"
 #include "render.h"
@@ -7,6 +8,7 @@
 #include "rectangle.h"
 
 static constexpr int CHUNK_SIZE = 32;
+static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::max();
 
 #define gpuErrchk(ans) \
     { gpuAssert((ans), __FILE__, __LINE__); }
@@ -15,6 +17,28 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
         fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
         if (abort) exit(code);
     }
+}
+
+static __device__ RGBColor cast_ray(Vector3 ray_source, Ray const &ray, Sphere *spheres, int const & spheres_count) {
+    float current_distance = FLOAT_INFINITY;
+    int hit_sphere = -1;
+
+    for (int sphere_index = 0; sphere_index < spheres_count; sphere_index++) {
+
+        if (spheres[sphere_index].hits_ray(ray)) {
+            float distance = Vector3(ray_source, spheres[sphere_index].get_position()).length();
+            if (distance < current_distance) {
+                current_distance = distance;
+                hit_sphere = sphere_index;
+            }
+        } 
+    }
+
+    if (hit_sphere != -1) {
+        return spheres[hit_sphere].get_material().get_color();
+    }
+    
+    return RGBColor(0, 0, 0); // background
 }
 
 static __global__ void kernel(int width, int height, RGBColor *img, Sphere *spheres, Camera camera,
@@ -33,12 +57,8 @@ static __global__ void kernel(int width, int height, RGBColor *img, Sphere *sphe
     screen.left_top_point.y - tidY * screen.height() / height, screen.left_top_point.z);
     Vector3 direction(camera.position, point_on_screen);
     Ray ray(camera.position, direction);
-    
-    for (int sphere_index = 0; sphere_index < spheres_count; sphere_index++) {
-        if (spheres[sphere_index].hits_ray(ray)) {
-            img[tidY*width + tidX] = RGBColor(1, 0.5f, 1);
-        } 
-    }
+
+    img[tidY*width + tidX] = cast_ray(camera.position, ray, spheres, spheres_count);
 }
 
 Image render(std::vector<Sphere> const &spheres, Camera &camera) {
