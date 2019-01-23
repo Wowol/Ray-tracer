@@ -28,13 +28,16 @@ inline void gpuAssert(cudaError_t code, const char *file, int line,
 static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
                                     int const &spheres_count) {
     int hit_sphere = -1;
+    bool was_hit;
     for (int i = 0; i < MAX_NUMBER_OF_REFLECTIONS; i++) {
         float current_distance = FLOAT_INFINITY;
+        was_hit = false;
 
         for (int sphere_index = 0; sphere_index < spheres_count;
              sphere_index++) {
             if (sphere_index != hit_sphere &&
                 spheres[sphere_index].hits_ray(ray)) {
+                was_hit = true;
                 float distance =
                     Vector3(ray.get_position(),
                             spheres[sphere_index].get_intersection_point(ray))
@@ -46,14 +49,14 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
             }
         }
 
-        if (hit_sphere != -1) {
+        if (was_hit) {
             ray = spheres[hit_sphere].reflect(ray);
         } else {
             break;
         }
     }
 
-    if (hit_sphere != -1) {
+    if (was_hit) {
         return spheres[hit_sphere].get_material().get_color();
     }
 
