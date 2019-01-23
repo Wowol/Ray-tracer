@@ -7,6 +7,9 @@
 #include "render.h"
 #include "vector3.h"
 
+#define BACKGROUND_COLOR RGBColor(0, 1, 1);
+#define FLOOR_COLOR RGBColor(0, 1, 0);
+
 static constexpr int CHUNK_SIZE = 32;
 static constexpr int MAX_NUMBER_OF_REFLECTIONS = 2;
 static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
@@ -54,7 +57,11 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
         return spheres[hit_sphere].get_material().get_color();
     }
 
-    return RGBColor(0, 0, 0);  // background
+    if (ray.get_direction().y < 0) {
+        return FLOOR_COLOR;
+    }
+
+    return BACKGROUND_COLOR;
 }
 
 static __global__ void kernel(int width, int height, RGBColor *img,

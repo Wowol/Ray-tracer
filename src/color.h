@@ -13,13 +13,13 @@ class RGBColor {
 public:
     float data[4];
 
-    inline float& r() { return data[0]; }
-    inline float& g() { return data[1]; }
-    inline float& b() { return data[2]; }
+    HD inline float& r() { return data[0]; }
+    HD inline float& g() { return data[1]; }
+    HD inline float& b() { return data[2]; }
 
-    inline float r() const { return data[0]; }
-    inline float g() const { return data[1]; }
-    inline float b() const { return data[2]; }
+    HD inline float r() const { return data[0]; }
+    HD inline float g() const { return data[1]; }
+    HD inline float b() const { return data[2]; }
 
     HD RGBColor() {}
     HD RGBColor(float r, float g, float b) : data{r,g,b,0.0f} {}
@@ -31,12 +31,12 @@ public:
       return RGBColor(op(r()), op(g()), op(b()));
     }
 
-    RGBColor operator+(const RGBColor& c) const { return RGBColor(r()+c.r(), g()+c.g(), b()+c.b()); }
-    RGBColor operator-(const RGBColor& c) const { return RGBColor(r()-c.r(), g()-c.g(), b()-c.b()); }
-    RGBColor operator*(const RGBColor& c) const { return RGBColor(r()*c.r(), g()*c.g(), b()*c.b()); }
+    HD RGBColor operator+(const RGBColor& c) const { return RGBColor(r()+c.r(), g()+c.g(), b()+c.b()); }
+    HD RGBColor operator-(const RGBColor& c) const { return RGBColor(r()-c.r(), g()-c.g(), b()-c.b()); }
+    HD RGBColor operator*(const RGBColor& c) const { return RGBColor(r()*c.r(), g()*c.g(), b()*c.b()); }
     
-    bool operator==(const RGBColor& c) const { return r() == c.r() && g() == c.g() && b() == c.b(); }
-    bool operator!=(const RGBColor& c) const { return !(*this == c); }
+    HD bool operator==(const RGBColor& c) const { return r() == c.r() && g() == c.g() && b() == c.b(); }
+    HD bool operator!=(const RGBColor& c) const { return !(*this == c); }
 
 };
 

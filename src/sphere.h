@@ -35,7 +35,7 @@ class Sphere {
 
         Vector3 oc(ray.get_position(), get_position());
 
-        Vector3 offset(ray.get_position(),
+        Vector3 offset(ray.get_position(), position +
                        perpendicular * (perpendicular.scalar_product(oc)));
 
         return Ray(intersection_point, ray.get_position() + offset * 2);
