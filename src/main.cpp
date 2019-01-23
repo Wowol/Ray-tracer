@@ -70,10 +70,11 @@ void render_test() {
   float height = 0.9f;
 
   std::vector<Sphere> spheres = {
-      Sphere(Vector3(1.2f, 1.2f, 5.0f), 0.5f,
-             Material(RGBColor(1, 0.5f, 0.5f), 0, 0)),
-      Sphere(Vector3(-1.0f, 1.2f, 5.0f), 0.5f,
-             Material(RGBColor(1, 0, 1), 0, 0))};
+      Sphere(Vector3(-0.7f, 2, 12.0f), 0.5, Material(RGBColor(1, 0, 0), 0, 0)),
+      Sphere(Vector3(1.3f, 0, 12.0f), 0.7,
+             Material(RGBColor(0, 0, 1.0f), 0, 0)),
+      Sphere(Vector3(-0.7f, 0, 8.0f), 1, Material(RGBColor(0, 1, 0), 0, 0)),
+      Sphere(Vector3(2.0f, 0, 4.0f), 1, Material(RGBColor(1, 1, 0), 0, 0))};
 
   Camera camera(position, vector_to_screen, width, height);
 
