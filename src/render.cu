@@ -1,44 +1,29 @@
+#include <limits>
+#include <vector>
 #include "camera.h"
 #include "color.h"
 #include "ray.h"
 #include "rectangle.h"
 #include "render.h"
 #include "vector3.h"
-#include <limits>
-#include <vector>
 
 static constexpr int CHUNK_SIZE = 32;
 static constexpr int MAX_NUMBER_OF_REFLECTIONS = 2;
-static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::max();
+static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
 
-#define gpuErrchk(ans)                                                         \
+#define gpuErrchk(ans) \
     { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line,
                       bool abort = true) {
     if (code != cudaSuccess) {
         fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file,
                 line);
-        if (abort)
-            exit(code);
+        if (abort) exit(code);
     }
-}
-
-static __device__ Ray reflect(Ray const &ray, Sphere const &sphere) {
-    Vector3 intersection_point = sphere.get_intersection_point(ray);
-    Vector3 perpendicular(sphere.get_position(), intersection_point);
-    perpendicular.normalize();
-
-    Vector3 oc(ray.get_position(), sphere.get_position());
-
-    Vector3 offset(ray.get_position(),
-                   perpendicular * (perpendicular.scalar_product(oc)));
-
-    return Ray(intersection_point, ray.get_position() + offset * 2);
 }
 
 static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
                                     int const &spheres_count) {
-
     int hit_sphere = -1;
     for (int i = 0; i < MAX_NUMBER_OF_REFLECTIONS; i++) {
         float current_distance = FLOAT_INFINITY;
@@ -59,7 +44,7 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
         }
 
         if (hit_sphere != -1) {
-            ray = reflect(ray, spheres[hit_sphere]);
+            ray = spheres[hit_sphere].reflect(ray);
         } else {
             break;
         }
@@ -69,7 +54,7 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
         return spheres[hit_sphere].get_material().get_color();
     }
 
-    return RGBColor(0, 0, 0); // background
+    return RGBColor(0, 0, 0);  // background
 }
 
 static __global__ void kernel(int width, int height, RGBColor *img,
