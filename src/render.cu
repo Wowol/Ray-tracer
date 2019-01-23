@@ -11,7 +11,7 @@
 #define FLOOR_COLOR RGBColor(0, 1, 0);
 
 static constexpr int CHUNK_SIZE = 32;
-static constexpr int MAX_NUMBER_OF_REFLECTIONS = 2;
+static constexpr int MAX_NUMBER_OF_REFLECTIONS = 100;
 static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
 
 #define gpuErrchk(ans) \
@@ -29,6 +29,8 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
                                     int const &spheres_count) {
     int hit_sphere = -1;
     bool was_hit;
+    float color_multiplier = 1;
+    RGBColor color(0,0,0);
     for (int i = 0; i < MAX_NUMBER_OF_REFLECTIONS; i++) {
         float current_distance = FLOAT_INFINITY;
         was_hit = false;
@@ -50,21 +52,24 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
         }
 
         if (was_hit) {
+            color = color + color_multiplier * spheres[hit_sphere].get_material().get_color();
+            color_multiplier *= spheres[hit_sphere].get_material().get_reflection_coefficient();
             ray = spheres[hit_sphere].reflect(ray);
+            if(color_multiplier < 0.001f) {
+                break;
+            }
         } else {
             break;
         }
     }
 
-    if (was_hit) {
-        return spheres[hit_sphere].get_material().get_color();
-    }
-
     if (ray.get_direction().y < 0) {
-        return FLOOR_COLOR;
+        color = color + color_multiplier * FLOOR_COLOR;
+    } else {
+        color = color + color_multiplier * BACKGROUND_COLOR;
     }
 
-    return BACKGROUND_COLOR;
+    return color;
 }
 
 static __global__ void kernel(int width, int height, RGBColor *img,
