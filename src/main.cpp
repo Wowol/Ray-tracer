@@ -1,12 +1,13 @@
+#include <vector>
 #include "camera.h"
 #include "color.h"
 #include "image.h"
+#include "light.h"
 #include "ray.h"
 #include "rectangle.h"
 #include "render.h"
 #include "sphere.h"
 #include "vector3.h"
-#include <vector>
 
 #include <iostream>
 
@@ -64,22 +65,30 @@ void vector_test() {
 }
 
 void render_test() {
-    Vector3 position(0.0f, 0.0f, 0.0f);
+    Vector3 position(0.0f, 4.0f, 0.0f);
     Vector3 vector_to_screen(0.0f, 0.0f, 1.0f);
     float width = 1.6f;
     float height = 0.9f;
 
+    std::vector<Light> lights = {Light(Vector3(-10, 10, 0.0f), 0.8),
+                                 Light(Vector3(0, 0, 20), 0.8)};
+
     std::vector<Sphere> spheres = {
-        Sphere(Vector3(-0.7f, 2, 12.0f), 0.5,
-               Material(RGBColor(1, 0, 0), .3, 0)),
-        Sphere(Vector3(1.3f, 0, 12.0f), 0.7,
-               Material(RGBColor(0, 0, 1.0f), .3, 0)),
-        Sphere(Vector3(-0.7f, 0, 8.0f), 1, Material(RGBColor(0, 0, 0), .3, 0)),
-        Sphere(Vector3(2.0f, 0, 4.0f), 1, Material(RGBColor(1, 1, 0), .3, 0))};
+        Sphere(Vector3(-0.7f, 5, 12.0f), 0.5,
+               Material(RGBColor(1, 0, 0), .03, 0)),  // 0 RED
+        Sphere(Vector3(1.3f, 4, 12.0f), 0.7,
+               Material(RGBColor(0, 0, 1.0f), .03, 0)),  // 1 BLUE
+        Sphere(Vector3(-0.7f, 3, 8.0f), 1,
+               Material(RGBColor(1, 1, 1), .02, 0)),  // 2 WHITE
+        Sphere(Vector3(2.0f, 2, 8.0f), 1,
+               Material(RGBColor(1, 1, 0), .04, 0)),  // 3 YELLOW
+        Sphere(Vector3(13.0f, 5, 30.0f), 7,
+               Material(RGBColor(0, 0, 0), .9, 0))  // 4 MIRROR
+    };
 
     Camera camera(position, vector_to_screen, width, height);
 
-    render(spheres, camera).writePNG("out.png");
+    render(spheres, lights, camera).writePNG("out.png");
 }
 
 int main() {

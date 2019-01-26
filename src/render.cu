@@ -2,6 +2,7 @@
 #include <vector>
 #include "camera.h"
 #include "color.h"
+#include "light.h"
 #include "ray.h"
 #include "rectangle.h"
 #include "render.h"
@@ -10,8 +11,12 @@
 #define BACKGROUND_COLOR RGBColor(0, 1, 1);
 #define FLOOR_COLOR RGBColor(0, 1, 0);
 
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
 static constexpr int CHUNK_SIZE = 32;
-static constexpr int MAX_NUMBER_OF_REFLECTIONS = 100;
+static constexpr int MAX_NUMBER_OF_REFLECTIONS = 30;
 static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
 
 #define gpuErrchk(ans) \
@@ -25,24 +30,99 @@ inline void gpuAssert(cudaError_t code, const char *file, int line,
     }
 }
 
-static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
+static __device__ bool is_in_shadow(int me, Vector3 const &point,
+                                    Light const &light, Sphere *spheres,
                                     int const &spheres_count) {
+    Vector3 direction(point, light.position);
+    direction.normalize();
+
+    Vector3 offset = Vector3(point, spheres[me].get_position());
+    offset.normalize();
+
+    Ray ray(point - offset * 0.001f, direction);
+
+    for (int sphere_index = 0; sphere_index < spheres_count; sphere_index++) {
+        if (spheres[sphere_index].hits_ray(ray)) {
+            if (spheres[sphere_index].get_intersection_point(ray).distance(
+                    point) < light.position.distance(point)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static __device__ RGBColor get_color(int hit_sphere, Ray const &ray, Sphere *spheres, Light *lights,
+                                     int const &spheres_count,
+                                     int const &lights_count) {
+    Vector3 vector_color;
+    Vector3 current_color;
+    Vector3 light_amt;
+
+    for (int light_index = 0; light_index < lights_count;
+         light_index++) {
+        Light light = lights[light_index];
+        Vector3 hit_point =
+            spheres[hit_sphere].get_intersection_point(ray);
+        Vector3 center_to_hit_point_normalized(
+            spheres[hit_sphere].get_position(), hit_point);
+        center_to_hit_point_normalized.normalize();
+        Vector3 light_direction = Vector3(hit_point, light.position);
+        float light_distance_squared =
+            light_direction.scalar_product(light_direction);
+        light_direction.normalize();
+        float light_dot_cent =
+            max(0, light_direction.scalar_product(
+                       center_to_hit_point_normalized));
+        bool in_shadow = is_in_shadow(hit_sphere, hit_point, lights[0],
+                                      spheres, spheres_count);
+
+        light_amt = light_amt +
+                    light.intensity * light_dot_cent * (1 - in_shadow);
+        Ray light_ray(light.position, light_direction);
+        Vector3 light_reflected_direction =
+            spheres[hit_sphere].reflect(light_ray).get_direction();
+        current_color =
+            current_color +
+            light.intensity *
+                powf(max(0, -light_reflected_direction.scalar_product(
+                                ray.get_direction())),
+                     1);
+    }
+    RGBColor material_color =
+        spheres[hit_sphere].get_material().get_color();
+    vector_color = light_amt *
+                       Vector3(material_color.r(), material_color.g(),
+                               material_color.b()) *
+                       0.8f +
+                   current_color * 0.2f;
+    return RGBColor(vector_color.x, vector_color.y, vector_color.z);
+}
+
+static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres, Light *lights,
+                                    int const &spheres_count,
+                                    int const &lights_count) {
     int hit_sphere = -1;
     bool was_hit;
     float color_multiplier = 1;
-    RGBColor color(0,0,0);
+    RGBColor color(0, 0, 0);
+    int old_sphere = -1;
+
     for (int i = 0; i < MAX_NUMBER_OF_REFLECTIONS; i++) {
         float current_distance = FLOAT_INFINITY;
         was_hit = false;
 
         for (int sphere_index = 0; sphere_index < spheres_count;
              sphere_index++) {
-            if (sphere_index != hit_sphere &&
+            if (sphere_index != old_sphere &&
                 spheres[sphere_index].hits_ray(ray)) {
                 was_hit = true;
+                Vector3 intersection_point =
+                    spheres[sphere_index].get_intersection_point(ray);
                 float distance =
                     Vector3(ray.get_position(),
-                            spheres[sphere_index].get_intersection_point(ray))
+                            intersection_point)
                         .length();
                 if (distance < current_distance) {
                     current_distance = distance;
@@ -52,10 +132,18 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
         }
 
         if (was_hit) {
-            color = color + color_multiplier * spheres[hit_sphere].get_material().get_color();
-            color_multiplier *= spheres[hit_sphere].get_material().get_reflection_coefficient();
+            color = color + color_multiplier *
+                                (1 - spheres[hit_sphere]
+                                         .get_material()
+                                         .get_reflection_coefficient()) *
+                                get_color(hit_sphere, ray, spheres, lights, spheres_count, lights_count);
+            color_multiplier *=
+                spheres[hit_sphere].get_material().get_reflection_coefficient();
+
             ray = spheres[hit_sphere].reflect(ray);
-            if(color_multiplier < 0.001f) {
+            old_sphere = hit_sphere;
+
+            if (color_multiplier < 0.001f) {
                 break;
             }
         } else {
@@ -73,10 +161,11 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres,
 }
 
 static __global__ void kernel(int width, int height, RGBColor *img,
-                              Sphere *spheres, Camera camera,
-                              int spheres_count) {
+                              Sphere *spheres, Light *lights, Camera camera,
+                              int spheres_count, int lights_count) {
     int tidX = blockIdx.x * blockDim.x + threadIdx.x;
     int tidY = blockIdx.y * blockDim.y + threadIdx.y;
+
     if (tidX > width || tidY > height) {
         return;
     }
@@ -92,10 +181,12 @@ static __global__ void kernel(int width, int height, RGBColor *img,
     Vector3 direction(camera.position, point_on_screen);
     Ray ray(camera.position, direction);
 
-    img[tidY * width + tidX] = cast_ray(ray, spheres, spheres_count);
+    img[tidY * width + tidX] =
+        cast_ray(ray, spheres, lights, spheres_count, lights_count);
 }
 
-Image render(std::vector<Sphere> const &spheres, Camera &camera) {
+Image render(std::vector<Sphere> const &spheres,
+             std::vector<Light> const &lights, Camera &camera) {
     cudaSetDevice(0);
     Image img(1920, 1080);
 
@@ -109,12 +200,18 @@ Image render(std::vector<Sphere> const &spheres, Camera &camera) {
                          sizeof(Sphere) * spheres.size(),
                          cudaMemcpyHostToDevice));
 
+    Light *cudaLights;
+    gpuErrchk(cudaMalloc(&cudaLights, sizeof(Light) * lights.size()));
+    gpuErrchk(cudaMemcpy(cudaLights, lights.data(),
+                         sizeof(Light) * lights.size(),
+                         cudaMemcpyHostToDevice));
+
     uint32_t gridX = (img.width() + CHUNK_SIZE - 1) / CHUNK_SIZE;
     uint32_t gridY = (img.height() + CHUNK_SIZE - 1) / CHUNK_SIZE;
 
     kernel<<<{gridX, gridY}, {CHUNK_SIZE, CHUNK_SIZE}>>>(
-        img.width(), img.height(), cudaPixels, cudaSpheres, camera,
-        spheres.size());
+        img.width(), img.height(), cudaPixels, cudaSpheres, cudaLights, camera,
+        spheres.size(), lights.size());
 
     gpuErrchk(cudaDeviceSynchronize());
 

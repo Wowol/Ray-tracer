@@ -25,7 +25,17 @@ class Sphere {
         float b = 2.0f * oc.scalar_product(ray.get_direction());
         float c = oc.scalar_product(oc) - radius * radius;
         float delta = b * b - 4 * a * c;
-        return delta >= 0;
+        if (delta < 0) {
+            return false;
+        }
+
+        Vector3 v = Vector3(
+            ray.get_position(),
+            get_intersection_point(ray));  
+        if (ray.get_direction().x * v.x < 0) { // check if ray doesn't go backwards
+            return false;
+        }
+        return true;
     }
 
     HD Ray reflect(Ray const &ray) {
@@ -35,10 +45,11 @@ class Sphere {
 
         Vector3 oc(ray.get_position(), get_position());
 
-        Vector3 offset(ray.get_position(), position +
-                       perpendicular * (perpendicular.scalar_product(oc)));
+        Vector3 offset(
+            ray.get_position(),
+            position + perpendicular * (perpendicular.scalar_product(oc)));
 
-        return Ray(intersection_point, ray.get_position() + offset * 2);
+        return Ray(intersection_point, ray.get_position() + offset * -2);
     }
 
     HD Vector3 get_intersection_point(Ray const &ray) const {
