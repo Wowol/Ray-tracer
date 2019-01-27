@@ -15,7 +15,7 @@
 #define max(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
-static constexpr int CHUNK_SIZE = 32;
+static constexpr int CHUNK_SIZE = 10;
 static constexpr int MAX_NUMBER_OF_REFLECTIONS = 30;
 static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
 
