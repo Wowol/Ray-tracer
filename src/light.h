@@ -13,8 +13,8 @@
 class Light {
    public:
     Vector3 position;
-    Vector3 intensity;
-    HD Light(const Vector3 &p, const Vector3 &i) : position(p), intensity(i) {}
+    RGBColor emitting_light;
+    HD Light(const Vector3 &p, const RGBColor &i) : position(p), emitting_light(i) {}
 };
 
 #endif  // LIGHT_HEADER

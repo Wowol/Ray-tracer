@@ -23,6 +23,8 @@ class RGBColor {
 
     HD RGBColor() {}
     HD RGBColor(float r, float g, float b) : data{r, g, b, 0.0f} {}
+    HD RGBColor(float r) : data{r, r, r, 0.0f} {}
+
 
     HD static RGBColor rep(float v) { return RGBColor(v, v, v); }
 
@@ -54,23 +56,6 @@ HD inline RGBColor operator*(const RGBColor &a, float scalar) {
 }
 HD inline RGBColor operator/(const RGBColor &a, float scalar) {
     return a * RGBColor::rep(1.0f / scalar);
-}
-
-HD inline RGBColor linear2RGB(const RGBColor &color) {
-    return color.transform([](float v) {
-        if (v >= 0.0f)
-            return std::pow(v, 1 / 2.2f);
-        else
-            return -std::pow(-v, 1 / 2.2f);
-    });
-}
-HD inline RGBColor RGB2Linear(const RGBColor &color) {
-    return color.transform([](float v) {
-        if (v >= 0.0f)
-            return std::pow(v, 2.2f);
-        else
-            return -std::pow(-v, 2.2f);
-    });
 }
 
 HD inline RGBColor clamp(const RGBColor &color) {

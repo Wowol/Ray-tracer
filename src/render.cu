@@ -1,3 +1,5 @@
+#include <limits>
+#include <vector>
 #include "camera.h"
 #include "color.h"
 #include "light.h"
@@ -5,8 +7,6 @@
 #include "rectangle.h"
 #include "render.h"
 #include "vector3.h"
-#include <limits>
-#include <vector>
 
 #define BACKGROUND_COLOR RGBColor(0, 1, 1);
 #define FLOOR_COLOR RGBColor(0, 1, 0);
@@ -19,7 +19,7 @@ static constexpr int CHUNK_SIZE = 10;
 static constexpr int MAX_NUMBER_OF_REFLECTIONS = 30;
 static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
 
-#define gpuErrchk(ans)                                                         \
+#define gpuErrchk(ans) \
     { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line,
                       bool abort = true) {
@@ -50,13 +50,13 @@ static __device__ bool is_in_shadow(Vector3 const &point, Light const &light,
     return false;
 }
 
-static __device__ float get_light_intensity(Vector3 const &point,
+static __device__ RGBColor get_light_color(Vector3 const &point,
                                             Light const &light,
                                             Vector3 const &surface_normal) {
     Vector3 light_direction = Vector3(point, light.position);
     light_direction.normalize();
 
-    return max(0.0f, surface_normal.scalar_product(light_direction)) * 0.8f;
+    return light.emitting_light * max(0.0f, surface_normal.scalar_product(light_direction));
 }
 
 static __device__ RGBColor get_color(int hit_sphere, Ray const &ray,
@@ -78,7 +78,7 @@ static __device__ RGBColor get_color(int hit_sphere, Ray const &ray,
             surface_normal.normalize();
             surface_color =
                 surface_color + spheres[hit_sphere].get_material().get_color() *
-                                    get_light_intensity(hit_point, light, surface_normal);
+                                    get_light_color(hit_point, light, surface_normal);
         }
     }
     return surface_color;
@@ -135,12 +135,11 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres, Light *lights,
     }
 
     if (ray.get_direction().y < 0) {
-
         float distance = -ray.get_position().y / ray.get_direction().y;
         Vector3 hit_point = ray.get_position() + ray.get_direction() * distance;
         for (int i = 0; i < lights_count; i++) {
             if (!is_in_shadow(hit_point, lights[i], spheres, spheres_count)) {
-                color = color + get_light_intensity(hit_point, lights[i], Vector3(0, 1, 0)) * color_multiplier * FLOOR_COLOR;
+                color = color + get_light_color(hit_point, lights[i], Vector3(0, 1, 0)) * color_multiplier * FLOOR_COLOR;
             }
         }
     } else {
@@ -164,15 +163,19 @@ static __global__ void kernel(int width, int height, RGBColor *img,
 
     Rectangle screen = camera.get_screen();
 
-    Vector3 point_on_screen =
-        Vector3(screen.left_top_point.x + tidX * screen.width() / width,
-                screen.left_top_point.y - tidY * screen.height() / height,
-                screen.left_top_point.z);
-    Vector3 direction(camera.position, point_on_screen);
-    Ray ray(camera.position, direction);
-
-    img[tidY * width + tidX] =
-        cast_ray(ray, spheres, lights, spheres_count, lights_count);
+    RGBColor color(0, 0, 0);
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            Vector3 point_on_screen =
+                Vector3(screen.left_top_point.x + (tidX + x) * screen.width() / width,
+                        screen.left_top_point.y - (tidY + y) * screen.height() / height,
+                        screen.left_top_point.z);
+            Vector3 direction(camera.position, point_on_screen);
+            Ray ray(camera.position, direction);
+            color = color + cast_ray(ray, spheres, lights, spheres_count, lights_count);
+        }
+    }
+    img[tidY * width + tidX] = color / 9.0f;
 }
 
 Image render(std::vector<Sphere> const &spheres,
