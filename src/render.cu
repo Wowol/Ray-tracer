@@ -1,5 +1,3 @@
-#include <limits>
-#include <vector>
 #include "camera.h"
 #include "color.h"
 #include "light.h"
@@ -7,6 +5,8 @@
 #include "rectangle.h"
 #include "render.h"
 #include "vector3.h"
+#include <limits>
+#include <vector>
 
 #define BACKGROUND_COLOR RGBColor(0, 1, 1);
 #define FLOOR_COLOR RGBColor(0, 1, 0);
@@ -19,27 +19,24 @@ static constexpr int CHUNK_SIZE = 10;
 static constexpr int MAX_NUMBER_OF_REFLECTIONS = 30;
 static constexpr float FLOAT_INFINITY = std::numeric_limits<float>::infinity();
 
-#define gpuErrchk(ans) \
+#define gpuErrchk(ans)                                                         \
     { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line,
                       bool abort = true) {
     if (code != cudaSuccess) {
         fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file,
                 line);
-        if (abort) exit(code);
+        if (abort)
+            exit(code);
     }
 }
 
-static __device__ bool is_in_shadow(int me, Vector3 const &point,
-                                    Light const &light, Sphere *spheres,
-                                    int const &spheres_count) {
+static __device__ bool is_in_shadow(Vector3 const &point, Light const &light,
+                                    Sphere *spheres, int const &spheres_count) {
     Vector3 direction(point, light.position);
     direction.normalize();
 
-    Vector3 offset = Vector3(point, spheres[me].get_position());
-    offset.normalize();
-
-    Ray ray(point - offset * 0.001f, direction);
+    Ray ray(point, direction);
 
     for (int sphere_index = 0; sphere_index < spheres_count; sphere_index++) {
         if (spheres[sphere_index].hits_ray(ray)) {
@@ -53,18 +50,17 @@ static __device__ bool is_in_shadow(int me, Vector3 const &point,
     return false;
 }
 
-static __device__ RGBColor get_color(int hit_sphere, Ray const &ray, Sphere *spheres, Light *lights,
+static __device__ RGBColor get_color(int hit_sphere, Ray const &ray,
+                                     Sphere *spheres, Light *lights,
                                      int const &spheres_count,
                                      int const &lights_count) {
     Vector3 vector_color;
     Vector3 current_color;
     Vector3 light_amt;
 
-    for (int light_index = 0; light_index < lights_count;
-         light_index++) {
+    for (int light_index = 0; light_index < lights_count; light_index++) {
         Light light = lights[light_index];
-        Vector3 hit_point =
-            spheres[hit_sphere].get_intersection_point(ray);
+        Vector3 hit_point = spheres[hit_sphere].get_intersection_point(ray);
         Vector3 center_to_hit_point_normalized(
             spheres[hit_sphere].get_position(), hit_point);
         center_to_hit_point_normalized.normalize();
@@ -72,14 +68,17 @@ static __device__ RGBColor get_color(int hit_sphere, Ray const &ray, Sphere *sph
         float light_distance_squared =
             light_direction.scalar_product(light_direction);
         light_direction.normalize();
-        float light_dot_cent =
-            max(0, light_direction.scalar_product(
-                       center_to_hit_point_normalized));
-        bool in_shadow = is_in_shadow(hit_sphere, hit_point, lights[0],
+        float light_dot_cent = max(
+            0, light_direction.scalar_product(center_to_hit_point_normalized));
+
+        Vector3 offset = Vector3(hit_point, spheres[hit_sphere].get_position());
+        offset.normalize();
+
+        bool in_shadow = is_in_shadow(hit_point - offset * 0.001f, lights[0],
                                       spheres, spheres_count);
 
-        light_amt = light_amt +
-                    light.intensity * light_dot_cent * (1 - in_shadow);
+        light_amt =
+            light_amt + light.intensity * light_dot_cent * (1 - in_shadow);
         Ray light_ray(light.position, light_direction);
         Vector3 light_reflected_direction =
             spheres[hit_sphere].reflect(light_ray).get_direction();
@@ -90,8 +89,7 @@ static __device__ RGBColor get_color(int hit_sphere, Ray const &ray, Sphere *sph
                                 ray.get_direction())),
                      1);
     }
-    RGBColor material_color =
-        spheres[hit_sphere].get_material().get_color();
+    RGBColor material_color = spheres[hit_sphere].get_material().get_color();
     vector_color = light_amt *
                        Vector3(material_color.r(), material_color.g(),
                                material_color.b()) *
@@ -121,9 +119,7 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres, Light *lights,
                 Vector3 intersection_point =
                     spheres[sphere_index].get_intersection_point(ray);
                 float distance =
-                    Vector3(ray.get_position(),
-                            intersection_point)
-                        .length();
+                    Vector3(ray.get_position(), intersection_point).length();
                 if (distance < current_distance) {
                     current_distance = distance;
                     hit_sphere = sphere_index;
@@ -136,7 +132,8 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres, Light *lights,
                                 (1 - spheres[hit_sphere]
                                          .get_material()
                                          .get_reflection_coefficient()) *
-                                get_color(hit_sphere, ray, spheres, lights, spheres_count, lights_count);
+                                get_color(hit_sphere, ray, spheres, lights,
+                                          spheres_count, lights_count);
             color_multiplier *=
                 spheres[hit_sphere].get_material().get_reflection_coefficient();
 
