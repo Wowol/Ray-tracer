@@ -119,7 +119,42 @@ void random_test() {
     render(spheres, lights, camera).writePNG("out.png");
 }
 
-void render_test() {
+void penis_test() {
+    Vector3 position(0.0f, 4.0f, 0.0f);
+    Vector3 vector_to_screen(0.0f, 0.0f, 1.0f);
+    float width = 1.6f;
+    float height = 0.9f;
+
+    std::vector<Light> lights = {Light(Vector3(-10, 10, 0.0f), 0.8)};
+
+    std::vector<Sphere> spheres = {
+        Sphere(Vector3(-2, 1, 12.0f), 1,
+               Material(RGBColor(0.828f, 0.52f, 0.52f), .03, 0)),
+        Sphere(Vector3(0, 1, 12.0f), 1,
+               Material(RGBColor(0.828f, 0.52f, 0.52f), .03, 0)),
+        Sphere(Vector3(2, 1, 12.0f), 1,
+               Material(RGBColor(0.828f, 0.52f, 0.52f), .03, 0)),
+        Sphere(Vector3(0, 2, 12.0f), 1,
+               Material(RGBColor(0.964f, 0.695f, 0.617f), .03, 0)),
+        Sphere(Vector3(0, 3, 12.0f), 1,
+               Material(RGBColor(0.964f, 0.695f, 0.617f), .03, 0)),
+        Sphere(Vector3(0, 4, 12.0f), 1,
+               Material(RGBColor(0.964f, 0.695f, 0.617f), .03, 0)),
+        Sphere(Vector3(0, 6, 12.0f), 0.3,
+               Material(RGBColor(1, 1, 1), .03, 0)),
+        Sphere(Vector3(0.2f, 7, 12.0f), 0.3,
+               Material(RGBColor(1, 1, 1), .03, 0)),
+        Sphere(Vector3(0.5f, 8, 12.0f), 0.3,
+               Material(RGBColor(1, 1, 1), .03, 0)),
+
+    };
+
+    Camera camera(position, vector_to_screen, width, height);
+
+    render(spheres, lights, camera).writePNG("out.png");
+}
+
+void strange_test() {
     Vector3 position(0.0f, 4.0f, 0.0f);
     Vector3 vector_to_screen(0.0f, 0.0f, 1.0f);
     float width = 1.6f;
@@ -150,6 +185,7 @@ int main() {
     // camera_test();
     // vector_test();
     // render_test();
-    random_test();
+    // random_test();
+    strange_test();
     return 0;
 }
