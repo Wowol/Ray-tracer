@@ -50,14 +50,19 @@ static __device__ bool is_in_shadow(Vector3 const &point, Light const &light,
     return false;
 }
 
+static __device__ float get_light_intensity(Vector3 const &point,
+                                            Light const &light,
+                                            Vector3 const &surface_normal) {
+    Vector3 light_direction = Vector3(point, light.position);
+    light_direction.normalize();
+
+    return max(0.0f, surface_normal.scalar_product(light_direction)) * 0.8f;
+}
+
 static __device__ RGBColor get_color(int hit_sphere, Ray const &ray,
                                      Sphere *spheres, Light *lights,
                                      int const &spheres_count,
                                      int const &lights_count) {
-    Vector3 vector_color;
-    Vector3 current_color;
-    Vector3 light_amt;
-
     RGBColor surface_color(0, 0, 0);
 
     for (int light_index = 0; light_index < lights_count; light_index++) {
@@ -69,18 +74,11 @@ static __device__ RGBColor get_color(int hit_sphere, Ray const &ray,
                                       spheres, spheres_count);
 
         if (!in_shadow) {
-            Vector3 center_to_hit_point_normalized(
-                spheres[hit_sphere].get_position(), hit_point);
-            center_to_hit_point_normalized.normalize();
-            Vector3 light_direction = Vector3(hit_point, light.position);
-            light_direction.normalize();
-
+            Vector3 surface_normal(spheres[hit_sphere].get_position(), hit_point);
+            surface_normal.normalize();
             surface_color =
-                surface_color +
-                spheres[hit_sphere].get_material().get_color() *
-                    max(0.0f, center_to_hit_point_normalized.scalar_product(
-                                  light_direction)) *
-                    0.8f;
+                surface_color + spheres[hit_sphere].get_material().get_color() *
+                                    get_light_intensity(hit_point, light, surface_normal);
         }
     }
     return surface_color;
