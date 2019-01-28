@@ -58,44 +58,32 @@ static __device__ RGBColor get_color(int hit_sphere, Ray const &ray,
     Vector3 current_color;
     Vector3 light_amt;
 
+    RGBColor surface_color(0, 0, 0);
+
     for (int light_index = 0; light_index < lights_count; light_index++) {
         Light light = lights[light_index];
         Vector3 hit_point = spheres[hit_sphere].get_intersection_point(ray);
-        Vector3 center_to_hit_point_normalized(
-            spheres[hit_sphere].get_position(), hit_point);
-        center_to_hit_point_normalized.normalize();
-        Vector3 light_direction = Vector3(hit_point, light.position);
-        float light_distance_squared =
-            light_direction.scalar_product(light_direction);
-        light_direction.normalize();
-        float light_dot_cent = max(
-            0, light_direction.scalar_product(center_to_hit_point_normalized));
-
         Vector3 offset = Vector3(hit_point, spheres[hit_sphere].get_position());
         offset.normalize();
-
-        bool in_shadow = is_in_shadow(hit_point - offset * 0.001f, lights[0],
+        bool in_shadow = is_in_shadow(hit_point - offset * 0.001f, light,
                                       spheres, spheres_count);
 
-        light_amt =
-            light_amt + light.intensity * light_dot_cent * (1 - in_shadow);
-        Ray light_ray(light.position, light_direction);
-        Vector3 light_reflected_direction =
-            spheres[hit_sphere].reflect(light_ray).get_direction();
-        current_color =
-            current_color +
-            light.intensity *
-                powf(max(0, -light_reflected_direction.scalar_product(
-                                ray.get_direction())),
-                     1);
+        if (!in_shadow) {
+            Vector3 center_to_hit_point_normalized(
+                spheres[hit_sphere].get_position(), hit_point);
+            center_to_hit_point_normalized.normalize();
+            Vector3 light_direction = Vector3(hit_point, light.position);
+            light_direction.normalize();
+
+            surface_color =
+                surface_color +
+                spheres[hit_sphere].get_material().get_color() *
+                    max(0.0f, center_to_hit_point_normalized.scalar_product(
+                                  light_direction)) *
+                    0.8f;
+        }
     }
-    RGBColor material_color = spheres[hit_sphere].get_material().get_color();
-    vector_color = light_amt *
-                       Vector3(material_color.r(), material_color.g(),
-                               material_color.b()) *
-                       0.8f +
-                   current_color * 0.2f;
-    return RGBColor(vector_color.x, vector_color.y, vector_color.z);
+    return surface_color;
 }
 
 static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres, Light *lights,
@@ -150,7 +138,7 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres, Light *lights,
 
     if (ray.get_direction().y < 0) {
 
-        float distance = - ray.get_position().y/ ray.get_direction().y;
+        float distance = -ray.get_position().y / ray.get_direction().y;
         Vector3 hit_point = ray.get_position() + ray.get_direction() * distance;
         bool is_lit = false;
         for (int i = 0; i < lights_count; i++) {
