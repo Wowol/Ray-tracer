@@ -149,7 +149,15 @@ static __device__ RGBColor cast_ray(Ray ray, Sphere *spheres, Light *lights,
     }
 
     if (ray.get_direction().y < 0) {
-        color = color + color_multiplier * FLOOR_COLOR;
+
+        float distance = - ray.get_position().y/ ray.get_direction().y;
+        Vector3 hit_point = ray.get_position() + ray.get_direction() * distance;
+        bool is_lit = false;
+        for (int i = 0; i < lights_count; i++) {
+            is_lit = is_lit || !is_in_shadow(hit_point, lights[i], spheres,
+                                             spheres_count);
+        }
+        color = color + is_lit * color_multiplier * FLOOR_COLOR;
     } else {
         color = color + color_multiplier * BACKGROUND_COLOR;
     }
