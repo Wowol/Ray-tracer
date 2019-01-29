@@ -43,7 +43,7 @@ void random_test() {
 
     std::uniform_real_distribution<float> random_0_1(0, 1);
 
-    std::uniform_real_distribution<float> random_0_0_0_5(0, 0.5f);
+    std::uniform_real_distribution<float> random_0_0_0_5(0, 0.02f);
 
     std::vector<Sphere> spheres;
 
@@ -66,7 +66,7 @@ void random_test() {
     render(spheres, lights, camera).writePNG("out.png");
 }
 
-void strange_test() {
+void inception_test() {
     Vector3 position(0.0f, 4.0f, 0.0f);
     Vector3 vector_to_screen(0.0f, 0.0f, 1.0f);
     float width = 1.6f;
@@ -75,31 +75,13 @@ void strange_test() {
     std::vector<Light> lights = {Light(Vector3(-10, 10, 0.0f), 0.8), Light(Vector3(-10, 10, 40.0f), 0.8)};
 
     std::vector<Sphere> spheres = {
-        Sphere(Vector3(-2, 1, 12.0f), 1,
-               Material(RGBColor(0.828f, 0.52f, 0.52f), .02, 0)),
-        Sphere(Vector3(0, 1, 12.0f), 1,
-               Material(RGBColor(0.828f, 0.52f, 0.52f), .02, 0)),
-        Sphere(Vector3(2, 1, 12.0f), 1,
-               Material(RGBColor(0.828f, 0.52f, 0.52f), .02, 0)),
-        Sphere(Vector3(0, 2, 12.0f), 1,
-               Material(RGBColor(0.964f, 0.695f, 0.617f), .02, 0)),
-        Sphere(Vector3(0, 3, 12.0f), 1,
-               Material(RGBColor(0.964f, 0.695f, 0.617f), .02, 0)),
-        Sphere(Vector3(0, 4, 12.0f), 1,
-               Material(RGBColor(0.964f, 0.695f, 0.617f), .02, 0)),
-        Sphere(Vector3(0, 6, 12.0f), 0.3,
-               Material(RGBColor(1, 1, 1), .02, 0)),
-        Sphere(Vector3(0.2f, 7, 12.0f), 0.3,
-               Material(RGBColor(1, 1, 1), .02, 0)),
-        Sphere(Vector3(0.5f, 8, 12.0f), 0.3,
-               Material(RGBColor(1, 1, 1), .02, 0)),
-
-        Sphere(Vector3(13.0f, 5, 30.0f), 7,
+        Sphere(Vector3(0.0f, 5, 7.0f), 5,
                Material(RGBColor(0, 0, 0), .9, 0)),  //  MIRROR
 
-        Sphere(Vector3(-10.0f, 5, 20.0f), 7,
-               Material(RGBColor(0, 0, 0), .9, 0))  //  MIRROR
+       Sphere(Vector3(0, 1, 3), 1, Material(RGBColor(0, 0, 1), 0, 0)),
 
+        Sphere(Vector3(0, 5, -7.0f), 5,
+               Material(RGBColor(0, 0, 0), .9, 0)),  //  MIRROR
     };
 
     Camera camera(position, vector_to_screen, width, height);
@@ -137,6 +119,6 @@ void render_test() {
 int main() {
     // render_test();
     random_test();
-    // strange_test();
+    // inception_test();
     return 0;
 }
