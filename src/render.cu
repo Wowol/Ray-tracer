@@ -167,8 +167,8 @@ static __global__ void kernel(int width, int height, RGBColor *img,
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
             Vector3 point_on_screen =
-                Vector3(screen.left_top_point.x + (tidX + x) * screen.width() / width,
-                        screen.left_top_point.y - (tidY + y) * screen.height() / height,
+                Vector3(screen.left_top_point.x + (tidX + x * 0.1f) * screen.width() / width,
+                        screen.left_top_point.y - (tidY + y * 0.1f) * screen.height() / height,
                         screen.left_top_point.z);
             Vector3 direction(camera.position, point_on_screen);
             Ray ray(camera.position, direction);
