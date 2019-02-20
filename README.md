@@ -1,7 +1,7 @@
 #  Ray tracer in CUDA
 
 Concurrent programming project written in CUDA C/C++.
-The calculations are done on graphic card, so you need a graphics card that supports CUDA to run program.
+The calculations are done on graphics card, so you need a graphics card that supports CUDA to run program.
 
 ## Getting Started
 
